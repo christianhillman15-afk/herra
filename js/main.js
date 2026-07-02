@@ -324,7 +324,7 @@
         '<span class="gallery__plate metal">' + ("0" + (i + 1)) + "</span>" +
         '<img src="' + url + '" alt="' + item.cap + ' by Herrera\'s Tile" loading="lazy" />' +
         '<span class="gallery__cap">' + item.cap + "</span>";
-      card.addEventListener("click", function (e) { e.preventDefault(); openLb(i); });
+      card.addEventListener("click", function (e) { e.preventDefault(); openLb(i, card); });
       track.appendChild(card);
     });
 
@@ -351,8 +351,11 @@
   }
 
   /* Lightbox */
-  var lbIndex = 0;
+  var lbIndex = 0, lbTrigger = null;
   var lightbox = $("#lightbox"), lbImg = $("#lbImg"), lbCap = $("#lbCap");
+  function lbFocusables() {
+    return ["#lbClose", "#lbPrev", "#lbNext"].map(function (s) { return $(s); }).filter(Boolean);
+  }
   function showLb(i) {
     if (!galleryUrls.length) return;
     lbIndex = (i + galleryUrls.length) % galleryUrls.length;
@@ -360,8 +363,25 @@
     lbImg.alt = galleryUrls[lbIndex].cap;
     if (lbCap) lbCap.textContent = galleryUrls[lbIndex].cap;
   }
-  function openLb(i) { if (!lightbox) return; showLb(i); lightbox.classList.add("is-open"); lightbox.setAttribute("aria-hidden", "false"); document.body.style.overflow = "hidden"; if (lenis) lenis.stop(); }
-  function closeLb() { if (!lightbox) return; lightbox.classList.remove("is-open"); lightbox.setAttribute("aria-hidden", "true"); document.body.style.overflow = ""; if (lenis) lenis.start(); }
+  function openLb(i, trigger) {
+    if (!lightbox) return;
+    lbTrigger = trigger || document.activeElement;
+    showLb(i);
+    lightbox.classList.add("is-open");
+    lightbox.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    if (lenis) lenis.stop();
+    var c = $("#lbClose"); if (c) c.focus(); // move focus into dialog
+  }
+  function closeLb() {
+    if (!lightbox) return;
+    lightbox.classList.remove("is-open");
+    lightbox.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    if (lenis) lenis.start();
+    if (lbTrigger && typeof lbTrigger.focus === "function") lbTrigger.focus(); // restore focus
+    lbTrigger = null;
+  }
   (function lbWire() {
     var c = $("#lbClose"), pv = $("#lbPrev"), nx = $("#lbNext");
     if (c) c.addEventListener("click", closeLb);
@@ -370,9 +390,15 @@
     if (lightbox) lightbox.addEventListener("click", function (e) { if (e.target === lightbox) closeLb(); });
     document.addEventListener("keydown", function (e) {
       if (!lightbox || !lightbox.classList.contains("is-open")) return;
-      if (e.key === "Escape") closeLb();
-      if (e.key === "ArrowLeft") showLb(lbIndex - 1);
-      if (e.key === "ArrowRight") showLb(lbIndex + 1);
+      if (e.key === "Escape") { closeLb(); return; }
+      if (e.key === "ArrowLeft") { showLb(lbIndex - 1); return; }
+      if (e.key === "ArrowRight") { showLb(lbIndex + 1); return; }
+      if (e.key === "Tab") { // focus trap
+        var f = lbFocusables(); if (!f.length) return;
+        var first = f[0], last = f[f.length - 1], active = document.activeElement;
+        if (e.shiftKey) { if (active === first || !lightbox.contains(active)) { e.preventDefault(); last.focus(); } }
+        else { if (active === last || !lightbox.contains(active)) { e.preventDefault(); first.focus(); } }
+      }
     });
   })();
 

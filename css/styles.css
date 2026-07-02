@@ -121,11 +121,14 @@ input, select, textarea { font-family: inherit; }
 .ico { width: 1.15em; height: 1.15em; fill: currentColor; flex: none; }
 
 .display { font-family: var(--font-display); font-weight: 500; font-variation-settings: "opsz" 90, "SOFT" 40; }
-.metal {
-  background: linear-gradient(100deg, var(--champagne-lo), var(--champagne-hi) 45%, var(--champagne-core));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.metal { color: var(--champagne-core); } /* fallback if background-clip:text is unsupported */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .metal {
+    background: linear-gradient(100deg, var(--champagne-lo), var(--champagne-hi) 45%, var(--champagne-core));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 }
 
 .skip-link {
