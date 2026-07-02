@@ -118,7 +118,6 @@
     initSplit();
     initParallax();
     initCounters();
-    initServiceSheen();
     initBeforeAfter();
     initGallery();
     initProcess();
@@ -127,7 +126,6 @@
     initBackToTop();
     initForm();
     initMagnetic();
-    initTilt();
     initCursor();
     if (hasST) window.ScrollTrigger.refresh();
   }
@@ -260,18 +258,6 @@
     } else { nums.forEach(function (el) { el.textContent = (el.getAttribute("data-count") || "") + (el.getAttribute("data-suffix") || ""); }); }
   }
 
-  /* ---------- Service card pointer sheen ---------- */
-  function initServiceSheen() {
-    if (!canHover) return;
-    $$(".service").forEach(function (card) {
-      card.addEventListener("pointermove", function (e) {
-        var r = card.getBoundingClientRect();
-        card.style.setProperty("--mx", ((e.clientX - r.left) / r.width * 100) + "%");
-        card.style.setProperty("--my", ((e.clientY - r.top) / r.height * 100) + "%");
-      });
-    });
-  }
-
   /* ---------- Before / After slider ---------- */
   function initBeforeAfter() {
     var ba = $("#ba"); if (!ba) return;
@@ -328,25 +314,26 @@
       track.appendChild(card);
     });
 
-    // Pinned horizontal scroll on desktop; native swipe otherwise
-    if (animate && hasST && isDesktop) {
-      var getScroll = function () { return track.scrollWidth - window.innerWidth + 40; };
-      var tween = gsap.to(track, {
-        x: function () { return -getScroll(); },
-        ease: "none",
-        scrollTrigger: {
-          trigger: "#gallery", start: "top top", end: function () { return "+=" + getScroll(); },
-          pin: true, scrub: 1, invalidateOnRefresh: true,
-          onUpdate: function (self) { var p = $("#galleryProgress"); if (p) p.style.width = (self.progress * 100) + "%"; }
-        }
-      });
-      // per-card image parallax within the horizontal scroll
-      $$(".gallery__card img", track).forEach(function (img) {
-        gsap.fromTo(img, { xPercent: -6 }, { xPercent: 6, ease: "none", scrollTrigger: { trigger: img.parentElement, containerAnimation: tween, start: "left right", end: "right left", scrub: true } });
-      });
-    } else {
-      viewport.classList.add("is-native");
-      var p2 = $("#galleryProgress"); if (p2) p2.parentElement.style.display = "none";
+    // Smooth horizontal reel: native scroll + swipe/drag. No scroll hijack, no pin.
+    viewport.classList.add("is-native");
+    var prog = $("#galleryProgress");
+    function updateProg() {
+      if (!prog) return;
+      var max = track.scrollWidth - viewport.clientWidth;
+      prog.style.width = (max > 0 ? Math.max(0, Math.min(1, viewport.scrollLeft / max)) * 100 : 0) + "%";
+    }
+    viewport.addEventListener("scroll", updateProg, { passive: true });
+    window.addEventListener("resize", updateProg);
+    updateProg();
+
+    // Desktop: click-and-drag to scroll the reel (grab cursor)
+    if (canHover) {
+      var down = false, startX = 0, startL = 0, moved = false;
+      viewport.addEventListener("pointerdown", function (e) { down = true; moved = false; startX = e.clientX; startL = viewport.scrollLeft; viewport.classList.add("is-dragging"); });
+      window.addEventListener("pointermove", function (e) { if (!down) return; var dx = e.clientX - startX; if (Math.abs(dx) > 4) moved = true; viewport.scrollLeft = startL - dx; });
+      window.addEventListener("pointerup", function () { if (down) { down = false; viewport.classList.remove("is-dragging"); } });
+      // suppress the click that ends a drag so it doesn't open the lightbox
+      viewport.addEventListener("click", function (e) { if (moved) { e.preventDefault(); e.stopPropagation(); } }, true);
     }
   }
 
@@ -402,25 +389,19 @@
     });
   })();
 
-  /* ---------- Process ---------- */
+  /* ---------- Process (non-pinned, draw-on-scroll timeline) ---------- */
   function initProcess() {
     var section = $("#process"), fill = $("#processFill"), steps = $$("#steps .step");
     if (!section || !steps.length) return;
-    function setActive(idx) { steps.forEach(function (s, i) { s.classList.toggle("is-active", i === idx); }); }
-
-    if (animate && hasST && isDesktop) {
-      var st = window.ScrollTrigger.create({
-        trigger: section, start: "top top", end: "+=2200", pin: true, scrub: 1, snap: 1 / (steps.length - 1),
-        onUpdate: function (self) {
-          if (fill) fill.style.height = (self.progress * 100) + "%";
-          setActive(Math.round(self.progress * (steps.length - 1)));
-        }
+    if (animate && hasST) {
+      // champagne line grows as the section passes through — natural scroll, no pin
+      gsap.to(fill, { height: "100%", ease: "none", scrollTrigger: { trigger: ".process__wrap", start: "top 62%", end: "bottom 72%", scrub: true } });
+      steps.forEach(function (s) {
+        gsap.from(s, { autoAlpha: 0, duration: 0.8, ease: "power2.out", scrollTrigger: { trigger: s, start: "top 88%", once: true } });
+        window.ScrollTrigger.create({ trigger: s, start: "top 60%", end: "bottom 55%", onToggle: function (self) { s.classList.toggle("is-active", self.isActive); } });
       });
     } else {
-      // unpinned: fill draws on scroll, all steps visible
-      if (hasST && animate) {
-        gsap.to(fill, { height: "100%", ease: "none", scrollTrigger: { trigger: ".process__wrap", start: "top 70%", end: "bottom 70%", scrub: true } });
-      } else if (fill) { fill.style.height = "100%"; }
+      if (fill) fill.style.height = "100%";
       steps.forEach(function (s) { s.classList.add("is-active"); });
     }
   }
@@ -478,23 +459,6 @@
         yTo((e.clientY - (r.top + r.height / 2)) * 0.28);
       });
       btn.addEventListener("pointerleave", function () { xTo(0); yTo(0); });
-    });
-  }
-
-  /* ---------- Tilt cards ---------- */
-  function initTilt() {
-    if (!canHover || !animate) return;
-    $$("[data-tilt]").forEach(function (card) {
-      var rx = gsap.quickTo(card, "rotationX", { duration: 0.5, ease: "power3.out" });
-      var ry = gsap.quickTo(card, "rotationY", { duration: 0.5, ease: "power3.out" });
-      card.style.transformPerspective = "800px";
-      card.addEventListener("pointermove", function (e) {
-        var r = card.getBoundingClientRect();
-        var px = (e.clientX - r.left) / r.width - 0.5;
-        var py = (e.clientY - r.top) / r.height - 0.5;
-        ry(px * 12); rx(-py * 12);
-      });
-      card.addEventListener("pointerleave", function () { rx(0); ry(0); });
     });
   }
 
