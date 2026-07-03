@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://herrerastile.com/sitemap.xml
