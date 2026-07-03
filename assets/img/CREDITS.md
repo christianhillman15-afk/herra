@@ -16,14 +16,12 @@ available. Attribution is listed here as a courtesy.
 - Source: https://www.pexels.com/photo/close-up-of-working-with-cement-on-pavement-11806477/
 
 ### `after.jpg`
-- Pristine, freshly renovated modern bathroom with grey marble tile floor and walls, a frameless glass shower, freestanding tub, and warm brass fixtures
-- Photo by Hongyue Stone (Jon Lee) on Pexels — free for commercial use, no attribution required
-- Source: https://www.pexels.com/photo/modern-bathroom-interior-design-16113325/
+- Renovated spa-style bathroom in warm travertine tile with a walk-in shower and freestanding tub.
+- Client-provided, AI-generated image (owned by Herrera's Tile LLC).
 
 ### `before.jpg`
-- Worn, cracked vintage white and blue octagonal ceramic tile floor showing age and wear, a classic dated bathroom floor before renovation
-- Photo by cottonbro studio on Pexels (free for commercial use, no attribution required)
-- Source: https://www.pexels.com/photo/white-and-blue-concrete-blocks-4752996/
+- Dated bathroom before renovation — stained old tile, discolored grout, worn fixtures (matched 'before' for the after image).
+- Client-provided, AI-generated image (owned by Herrera's Tile LLC).
 
 ### `cta-bg.jpg`
 - Wide open-concept luxury great room with glossy polished marble tile flooring, a dramatic backlit marble feature wall, mint-green leather sofas, and an adjoining dining area under warm ambient lighting
