@@ -796,26 +796,32 @@ a.contact__value:hover { color: var(--oxblood); }
   .calc__chip { font-size: .84rem; padding: .55rem .8rem; }
 }
 
-/* --- 3D self-building tile wall --- */
-.build { position: relative; height: 220vh; background: var(--espresso-900); }
-.build__sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; }
-.build__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; }
-.build__fallback { position: absolute; inset: 0; z-index: 1; display: none;
-  background:
-    radial-gradient(60% 55% at 50% 42%, rgba(193,90,46,.18), transparent 62%),
-    repeating-linear-gradient(0deg, transparent 0 43px, rgba(242,233,216,.06) 43px 45px),
-    repeating-linear-gradient(90deg, transparent 0 43px, rgba(242,233,216,.06) 43px 45px);
+/* --- Scroll-driven tile-install timelapse --- */
+.build { position: relative; height: 240vh; background: var(--espresso-900); }
+.build__sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; display: grid; }
+.build__bloom { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 48% at 50% 44%, rgba(193,90,46,.16), transparent 62%); }
+.build .grain { z-index: 1; opacity: .35; }
+.build__inner {
+  position: relative; z-index: 3; height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; gap: 1.1rem;
+  padding: calc(var(--header-h) + 1rem) 1.4rem 2rem;
 }
-.build.no-3d .build__canvas { display: none; }
-.build.no-3d .build__fallback { display: block; }
-.build__sticky::after {
-  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
-  background: linear-gradient(to top, rgba(13,10,6,.9), transparent 34%), radial-gradient(90% 60% at 50% 45%, transparent, rgba(13,10,6,.22));
+.build__inner .eyebrow { justify-content: center; margin-bottom: 0; }
+.build__title { font-family: var(--font-display); font-weight: 500; color: var(--cream); font-size: clamp(1.8rem, 4.2vw, 3rem); line-height: 1.04; letter-spacing: -0.02em; }
+.build__stage {
+  position: relative; width: min(90vw, 660px); aspect-ratio: 362 / 293; border-radius: 16px;
+  overflow: hidden; border: 6px solid rgba(242,233,216,.92); background: var(--espresso-800);
+  box-shadow: var(--shadow-lg);
 }
-.build__overlay { position: absolute; left: 0; right: 0; bottom: 11vh; z-index: 3; text-align: center; padding: 0 1.4rem; pointer-events: none; }
-.build__overlay .eyebrow { justify-content: center; }
-.build__title { font-family: var(--font-display); font-weight: 500; color: var(--cream); font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1.04; letter-spacing: -0.02em; margin: .3rem 0 .8rem; }
-.build__text { color: var(--cream-muted); max-width: 46ch; margin: 0 auto; font-size: 1.02rem; }
-.build__cue { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 3; width: 26px; height: 42px; border: 1.5px solid rgba(242,233,216,.5); border-radius: 999px; display: grid; place-items: start center; padding-top: 7px; pointer-events: none; }
+.build__still, .build__frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.build__seq { position: absolute; inset: 0; }
+.build__frame { will-change: opacity; }
+.build__meta { display: flex; align-items: center; gap: 1rem; width: min(90vw, 660px); color: var(--cream-muted); font-size: .8rem; }
+.build__stagelabel { font-weight: 600; color: var(--champagne-core); letter-spacing: .03em; min-width: 10ch; text-align: left; }
+.build__bar { flex: 1; height: 3px; background: var(--hairline-dark); border-radius: 3px; overflow: hidden; }
+.build__bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--ember), var(--champagne-core)); }
+.build__count { font-variant-numeric: tabular-nums; min-width: 6ch; text-align: right; }
+.build__text { color: var(--cream-muted); max-width: 46ch; margin: 0 auto; font-size: 1rem; }
+.build__cue { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 3; width: 26px; height: 42px; border: 1.5px solid rgba(242,233,216,.5); border-radius: 999px; display: grid; place-items: start center; padding-top: 7px; pointer-events: none; }
 .build__cue span { width: 4px; height: 8px; background: var(--champagne-core); border-radius: 999px; animation: cue 1.7s infinite; }
-@media (max-width: 860px) { .build { height: 180vh; } .build__overlay { bottom: 13vh; } }
+@media (max-width: 860px) { .build { height: 200vh; } .build__meta { font-size: .74rem; gap: .7rem; } .build__stagelabel { min-width: 8ch; } }

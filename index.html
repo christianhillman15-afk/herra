@@ -171,15 +171,24 @@
       <a href="#services" class="hero__cue" aria-label="Scroll to services"><span></span></a>
     </section>
 
-    <!-- ===== 3D BUILD — ACT I (dark, self-assembling tile wall) ===== -->
-    <section class="build act--dark" id="build" aria-label="A tile wall assembling itself as you scroll">
+    <!-- ===== BUILD SEQUENCE — ACT I (dark, scroll-driven tile install timelapse) ===== -->
+    <section class="build act--dark" id="build" aria-label="A Herrera tile install coming together as you scroll">
       <div class="build__sticky">
-        <canvas class="build__canvas" id="buildCanvas" aria-hidden="true"></canvas>
-        <div class="build__fallback" aria-hidden="true"></div>
-        <div class="build__overlay">
+        <div class="build__bloom" aria-hidden="true"></div>
+        <div class="grain" aria-hidden="true"></div>
+        <div class="build__inner">
           <p class="eyebrow eyebrow--onDark"><span class="rule"></span>Set tile by tile</p>
           <h2 class="build__title display">We build it to last</h2>
-          <p class="build__text">From the substrate up, every tile set straight and true — crisp grout lines and a finish you'll love for decades. Keep scrolling to watch it come together.</p>
+          <div class="build__stage" id="buildStage">
+            <img class="build__still" src="assets/img/build/frame-12.jpg" alt="A finished bathroom tiled by Herrera's Tile — warm travertine walls and floor" />
+            <div class="build__seq" id="buildSeq" aria-hidden="true"></div>
+          </div>
+          <div class="build__meta" aria-hidden="true">
+            <span class="build__stagelabel" id="buildStageLabel">Bare framing</span>
+            <div class="build__bar"><span id="buildBar"></span></div>
+            <span class="build__count" id="buildCount">01 / 12</span>
+          </div>
+          <p class="build__text">From the substrate up, every tile set straight and true. Scroll to watch a real install come together — bare framing to finished shower.</p>
         </div>
         <div class="build__cue" aria-hidden="true"><span></span></div>
       </div>
@@ -582,8 +591,7 @@
   <script src="js/vendor/gsap.min.js" defer></script>
   <script src="js/vendor/ScrollTrigger.min.js" defer></script>
   <script src="js/vendor/lenis.min.js" defer></script>
-  <script src="js/vendor/three.min.js" defer></script>
-  <script src="js/build-scene.js" defer></script>
+  <script src="js/build-photos.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>
 </html>
