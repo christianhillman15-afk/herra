@@ -1,9 +1,10 @@
 /* =========================================================
-   Herrera's Tile — self-building house frame (3D)
-   A house constructs itself in real order as you scroll:
-   foundation -> floor joists -> wall studs -> top plates
-   -> ridge -> roof rafters. Driven by a CSS-sticky section
-   (no scroll pin, so it stays smooth). Degrades gracefully.
+   Herrera's Tile — a shower/floor tiling itself (3D)
+   As you scroll, a real tile install comes together:
+   substrate -> floor tiles laid back-to-front ->
+   wall tiles set bottom-up -> champagne accent band.
+   Driven by a CSS-sticky section (no scroll pin). Degrades
+   gracefully (no WebGL / reduced motion).
    ========================================================= */
 (function () {
   "use strict";
@@ -33,105 +34,101 @@
   var camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 200);
 
   // --- Lighting: firelight on stone ---
-  scene.add(new THREE.AmbientLight(0x4a3a29, 0.95));
-  var key = new THREE.DirectionalLight(0xffe0b0, 1.5); key.position.set(7, 12, 10); scene.add(key);
-  var fill = new THREE.DirectionalLight(0x6a4a30, 0.5); fill.position.set(-8, 4, -6); scene.add(fill);
-  var ember = new THREE.PointLight(0xc15a2e, 1.4, 80); ember.position.set(-9, 1, 12); scene.add(ember);
-  var champ = new THREE.PointLight(0xecd598, 0.8, 80); champ.position.set(10, 9, 8); scene.add(champ);
+  scene.add(new THREE.AmbientLight(0x4c3c2b, 1.0));
+  var key = new THREE.DirectionalLight(0xffe1b2, 1.45); key.position.set(6, 11, 12); scene.add(key);
+  var fill = new THREE.DirectionalLight(0x6a4a30, 0.5); fill.position.set(-8, 5, 4); scene.add(fill);
+  var ember = new THREE.PointLight(0xc15a2e, 1.3, 90); ember.position.set(-10, 2, 14); scene.add(ember);
+  var champ = new THREE.PointLight(0xecd598, 0.8, 90); champ.position.set(10, 9, 10); scene.add(champ);
 
-  // --- House geometry (procedural framing) ---
   var group = new THREE.Group();
-  var BASE_ROT_Y = -0.55, BASE_ROT_X = 0.05;
+  var BASE_ROT_Y = -0.62, BASE_ROT_X = 0.34;
   group.rotation.set(BASE_ROT_X, BASE_ROT_Y, 0);
   scene.add(group);
 
-  var WX = 8.4, DZ = 5.4, WH = 3.3, RH = 2.3;
-  var slabH = 0.45, studT = 0.18, plateT = 0.22, rafterT = 0.17, joistT = 0.16;
-  var slabTop = slabH;
-  var wallTop = slabTop + WH;
-  var ridgeY = wallTop + RH;
+  // --- Layout ---
+  var WALL_W = 6.6, WALL_H = 4.6, FLOOR_D = 5.4;
+  var TILE = 1.0, GAP = 0.08, STEP = TILE + GAP, THK = 0.12;
+  var wallCols = Math.round(WALL_W / STEP), wallRows = Math.round(WALL_H / STEP);
+  var floorCols = wallCols, floorRows = Math.round(FLOOR_D / STEP);
+  var accentRow = Math.floor(wallRows * 0.62); // which wall row is the accent band
 
-  var WOODS = [0xC79A5E, 0xB98A54, 0xD3B07E, 0xC08F52];
-  var CONCRETE = 0x8A8074;
-  var CHAMP = 0xC9A24A;
+  var STONE = [0xEAE1CF, 0xE6DDCB, 0xF2E9D8, 0xDED2BB];
+  var TRAV = [0xCFB88E, 0xC4AC7E, 0xD8C39A, 0xBBA274];
+  var CHAMP = [0xC9A24A, 0xD8B45C];
+  var OX = 0x7A3A2E;
+  var SUB = 0x6C665D;
 
-  function wood() { return WOODS[Math.floor(Math.random() * WOODS.length)]; }
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
 
   var parts = [];
-  function addPart(o) { parts.push(o); }
+  function addPart(o) { parts.push(o); } // {mesh, t0, t1, start:{p,s,rx,ry,rz}, final:{p,s,rx,ry,rz}}
 
-  // 1) Foundation slab
-  addPart({ w: WX + 0.9, h: slabH, d: DZ + 0.9, pos: { x: 0, y: slabH / 2, z: 0 }, color: CONCRETE, rough: 0.92, metal: 0.02, grow: "y", t0: 0.00, t1: 0.09 });
+  var geoTile = new THREE.BoxGeometry(TILE, TILE, THK);
 
-  // 2) Floor joists (span width, spaced along depth)
-  var joistN = 5;
-  for (var jz = 0; jz < joistN; jz++) {
-    var zc = -DZ / 2 + (jz + 0.5) * (DZ / joistN);
-    var jt0 = 0.07 + 0.10 * (jz / joistN);
-    addPart({ w: WX, h: joistT, d: joistT, pos: { x: 0, y: slabTop + joistT / 2, z: zc }, color: wood(), rough: 0.7, metal: 0.05, grow: "x", t0: jt0, t1: jt0 + 0.09 });
-  }
-
-  // 3) Wall studs (perimeter) — rise up from the plate
-  var studList = [];
-  var nX = 8; // studs across width
-  for (var i = 0; i <= nX; i++) {
-    var x = -WX / 2 + i * (WX / nX);
-    studList.push({ x: x, z: DZ / 2 });
-    studList.push({ x: x, z: -DZ / 2 });
-  }
-  var nZ = 5; // studs along depth (skip shared corners)
-  for (var k = 1; k < nZ; k++) {
-    var z = -DZ / 2 + k * (DZ / nZ);
-    studList.push({ x: WX / 2, z: z });
-    studList.push({ x: -WX / 2, z: z });
-  }
-  studList.forEach(function (s, idx) {
-    var frac = idx / studList.length;
-    var t0 = 0.17 + 0.30 * frac;
-    addPart({ w: studT, h: WH, d: studT, pos: { x: s.x, y: slabTop + WH / 2, z: s.z }, color: wood(), rough: 0.7, metal: 0.05, grow: "y", t0: t0, t1: t0 + 0.11 });
-  });
-
-  // 4) Top plates (cap the walls)
-  addPart({ w: WX + studT, h: plateT, d: plateT, pos: { x: 0, y: wallTop + plateT / 2, z: DZ / 2 }, color: wood(), rough: 0.7, metal: 0.05, grow: "x", t0: 0.48, t1: 0.58 });
-  addPart({ w: WX + studT, h: plateT, d: plateT, pos: { x: 0, y: wallTop + plateT / 2, z: -DZ / 2 }, color: wood(), rough: 0.7, metal: 0.05, grow: "x", t0: 0.50, t1: 0.60 });
-  addPart({ w: plateT, h: plateT, d: DZ, pos: { x: WX / 2, y: wallTop + plateT / 2, z: 0 }, color: wood(), rough: 0.7, metal: 0.05, grow: "z", t0: 0.49, t1: 0.59 });
-  addPart({ w: plateT, h: plateT, d: DZ, pos: { x: -WX / 2, y: wallTop + plateT / 2, z: 0 }, color: wood(), rough: 0.7, metal: 0.05, grow: "z", t0: 0.51, t1: 0.61 });
-
-  // 5) Ridge beam (champagne accent)
-  addPart({ w: 0.22, h: 0.22, d: DZ, pos: { x: 0, y: ridgeY, z: 0 }, color: CHAMP, rough: 0.4, metal: 0.55, emissive: 0.16, grow: "z", t0: 0.58, t1: 0.68 });
-
-  // 6) Roof rafters (pairs forming the gable), rise + settle
-  var rLen = Math.sqrt((WX / 2) * (WX / 2) + RH * RH);
-  var rAng = Math.atan2(RH, WX / 2);
-  var rafterZ = [-DZ / 2, -DZ / 4, 0, DZ / 4, DZ / 2];
-  rafterZ.forEach(function (rz, ri) {
-    var t0 = 0.62 + 0.26 * (ri / rafterZ.length);
-    addPart({ w: rLen, h: rafterT, d: rafterT, pos: { x: -WX / 4, y: wallTop + RH / 2, z: rz }, rot: { x: 0, y: 0, z: rAng }, color: wood(), rough: 0.7, metal: 0.05, grow: "none", t0: t0, t1: t0 + 0.14 });
-    addPart({ w: rLen, h: rafterT, d: rafterT, pos: { x: WX / 4, y: wallTop + RH / 2, z: rz }, rot: { x: 0, y: 0, z: -rAng }, color: wood(), rough: 0.7, metal: 0.05, grow: "none", t0: t0 + 0.01, t1: t0 + 0.15 });
-  });
-
-  // --- Build the meshes (at final transform for bounds) ---
-  parts.forEach(function (o) {
-    var g = new THREE.BoxGeometry(o.w, o.h, o.d);
-    if (o.grow === "y") g.translate(0, o.h / 2, 0);
-    else if (o.grow === "x") g.translate(o.w / 2, 0, 0);
-    else if (o.grow === "z") g.translate(0, 0, o.d / 2);
-    var mat = new THREE.MeshStandardMaterial({ color: o.color, roughness: o.rough, metalness: o.metal, transparent: true, opacity: 1 });
-    if (o.emissive) mat.emissive = new THREE.Color(o.color).multiplyScalar(o.emissive);
-    var m = new THREE.Mesh(g, mat);
-    if (o.rot) m.rotation.set(o.rot.x, o.rot.y, o.rot.z);
-    // base position (accounting for grow pivot offset)
-    var bx = o.pos.x, by = o.pos.y, bz = o.pos.z;
-    if (o.grow === "y") by = o.pos.y - o.h / 2;
-    else if (o.grow === "x") bx = o.pos.x - o.w / 2;
-    else if (o.grow === "z") bz = o.pos.z - o.d / 2;
-    m.position.set(bx, by, bz);
-    o.basePos = { x: bx, y: by, z: bz };
-    o.mesh = m;
+  function tile(color, fx, fy, fz, faceRot, t0, t1, normal) {
+    var mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5, metalness: color === OX || CHAMP.indexOf(color) > -1 ? 0.45 : 0.12, transparent: true, opacity: 1 });
+    if (CHAMP.indexOf(color) > -1) mat.emissive = new THREE.Color(color).multiplyScalar(0.15);
+    var m = new THREE.Mesh(geoTile, mat);
     group.add(m);
-  });
+    // start: lifted off the surface along its normal + slight scatter + tilt
+    var off = 2.4 + Math.random() * 1.6;
+    addPart({
+      mesh: m, t0: t0, t1: t1,
+      final: { px: fx, py: fy, pz: fz, s: 1, rx: faceRot.x, ry: faceRot.y, rz: faceRot.z },
+      start: {
+        px: fx + normal.x * off + (Math.random() - 0.5) * 0.6,
+        py: fy + normal.y * off + (Math.random() - 0.5) * 0.6,
+        pz: fz + normal.z * off + (Math.random() - 0.5) * 0.6,
+        s: 0.45,
+        rx: faceRot.x + (Math.random() - 0.5) * 0.8,
+        ry: faceRot.y + (Math.random() - 0.5) * 0.8,
+        rz: faceRot.z + (Math.random() - 0.5) * 0.8
+      }
+    });
+  }
 
-  // Center group & fit camera
+  function panel(w, h, d, x, y, z, color, t0, t1) {
+    var g = new THREE.BoxGeometry(w, h, d);
+    var mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.95, metalness: 0.02, transparent: true, opacity: 1 });
+    var m = new THREE.Mesh(g, mat); group.add(m);
+    addPart({ mesh: m, t0: t0, t1: t1,
+      final: { px: x, py: y, pz: z, s: 1, rx: 0, ry: 0, rz: 0 },
+      start: { px: x, py: y, pz: z, s: 0.7, rx: 0, ry: 0, rz: 0 } });
+  }
+
+  var wallW = wallCols * STEP - GAP, floorD = floorRows * STEP - GAP;
+  var x0 = -wallW / 2;
+
+  // 1) Substrate (cement board behind wall + under floor)
+  panel(wallW + 0.4, wallRows * STEP + 0.2, 0.12, 0, WALL_H / 2, -0.02, SUB, 0.00, 0.10);
+  panel(wallW + 0.4, 0.12, floorD + 0.4, 0, -0.02, floorD / 2, SUB, 0.03, 0.12);
+
+  // 2) Floor tiles — lay back (near wall) to front
+  for (var fr = 0; fr < floorRows; fr++) {
+    for (var fc = 0; fc < floorCols; fc++) {
+      var fx = x0 + fc * STEP + TILE / 2;
+      var fz = fr * STEP + TILE / 2;
+      var order = (fr * floorCols + fc) / (floorRows * floorCols);
+      var t0 = 0.10 + 0.30 * order;
+      tile(pick(TRAV), fx, THK / 2, fz, { x: -Math.PI / 2, y: 0, z: 0 }, t0, t0 + 0.10, { x: 0, y: 1, z: 0 });
+    }
+  }
+
+  // 3) Wall tiles — set bottom-up
+  for (var wr = 0; wr < wallRows; wr++) {
+    for (var wc = 0; wc < wallCols; wc++) {
+      var wx = x0 + wc * STEP + TILE / 2;
+      var wy = wr * STEP + TILE / 2;
+      var isAccent = wr === accentRow;
+      var col = isAccent ? (Math.random() < 0.25 ? OX : pick(CHAMP)) : pick(STONE);
+      var rowOrder = wr / wallRows;
+      var t0w = isAccent ? 0.72 : 0.36 + 0.34 * rowOrder + (wc / wallCols) * 0.03;
+      var t1w = t0w + (isAccent ? 0.13 : 0.10);
+      tile(col, wx, wy, THK / 2, { x: 0, y: 0, z: 0 }, t0w, t1w, { x: 0, y: 0, z: 1 });
+    }
+  }
+
+  // Center group & fit camera (use final transforms)
   group.updateMatrixWorld(true);
   var box = new THREE.Box3().setFromObject(group);
   var size = box.getSize(new THREE.Vector3());
@@ -145,7 +142,7 @@
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     var vfov = FOV * Math.PI / 180;
-    var zH = (FIT.y * 1.18 / 2) / Math.tan(vfov / 2);
+    var zH = (FIT.y * 1.2 / 2) / Math.tan(vfov / 2);
     var zW = (FIT.x * 1.12 / 2) / (Math.tan(vfov / 2) * camera.aspect);
     camera.position.set(0, 0, Math.max(zH, zW));
     camera.lookAt(0, 0, 0);
@@ -153,6 +150,7 @@
   }
 
   function ease(t) { return 1 - Math.pow(1 - t, 3); }
+  function lerp(a, b, e) { return a + (b - a) * e; }
   var progress = reduce ? 1 : 0, target = progress;
 
   function sectionProgress() {
@@ -164,20 +162,19 @@
   function render() {
     progress += (target - progress) * 0.12;
     for (var i = 0; i < parts.length; i++) {
-      var o = parts[i], m = o.mesh;
+      var o = parts[i], m = o.mesh, s = o.start, f = o.final;
       var lp = (progress - o.t0) / (o.t1 - o.t0);
       lp = Math.min(1, Math.max(0, lp));
       var e = ease(lp);
-      if (o.grow === "y") { m.scale.set(1, Math.max(0.001, e), 1); }
-      else if (o.grow === "x") { m.scale.set(Math.max(0.001, e), 1, 1); }
-      else if (o.grow === "z") { m.scale.set(1, 1, Math.max(0.001, e)); }
-      else { var s = 0.35 + 0.65 * e; m.scale.setScalar(s); m.position.y = o.basePos.y - (1 - e) * 1.8; }
+      m.position.set(lerp(s.px, f.px, e), lerp(s.py, f.py, e), lerp(s.pz, f.pz, e));
+      m.rotation.set(lerp(s.rx, f.rx, e), lerp(s.ry, f.ry, e), lerp(s.rz, f.rz, e));
+      var sc = lerp(s.s, f.s, e); m.scale.setScalar(sc);
       if (e >= 0.999) { if (m.material.transparent) { m.material.transparent = false; m.material.opacity = 1; } }
-      else { m.material.transparent = true; m.material.opacity = Math.min(1, e * 1.5); }
+      else { m.material.transparent = true; m.material.opacity = Math.min(1, e * 1.6); }
     }
     if (!reduce) {
-      group.rotation.y = BASE_ROT_Y + (progress - 0.5) * 0.22;
-      group.rotation.x = BASE_ROT_X + Math.sin(progress * Math.PI) * 0.025;
+      group.rotation.y = BASE_ROT_Y + (progress - 0.5) * 0.2;
+      group.rotation.x = BASE_ROT_X - Math.sin(progress * Math.PI) * 0.03;
     }
     renderer.render(scene, camera);
   }
