@@ -127,7 +127,87 @@
     initForm();
     initMagnetic();
     initCursor();
+    initScrollProgress();
+    initCalc();
+    initGalleryFilter();
+    initFaq();
+    initMobileCta();
     if (hasST) window.ScrollTrigger.refresh();
+  }
+
+  /* ---------- Reading progress bar ---------- */
+  function initScrollProgress() {
+    var bar = $("#scrollProgress"); if (!bar) return;
+    function upd() {
+      var h = document.documentElement.scrollHeight - window.innerHeight;
+      var p = h > 0 ? window.scrollY / h : 0;
+      bar.style.transform = "scaleX(" + Math.min(1, Math.max(0, p)) + ")";
+    }
+    upd();
+    window.addEventListener("scroll", upd, { passive: true });
+    window.addEventListener("resize", upd);
+  }
+
+  /* ---------- Instant estimate calculator ---------- */
+  function initCalc() {
+    var svc = $("#calcService"), tier = $("#calcTier"), area = $("#calcArea"), areaVal = $("#calcAreaVal"), out = $("#calcValue");
+    if (!svc || !tier || !area || !out) return;
+    function active(g) { return g.querySelector(".is-active") || g.querySelector(".calc__chip"); }
+    function money(n) { n = Math.round(n / 10) * 10; return "$" + n.toLocaleString("en-US"); }
+    function update() {
+      var s = active(svc), t = active(tier);
+      var low = parseFloat(s.getAttribute("data-low")), high = parseFloat(s.getAttribute("data-high"));
+      var mult = parseFloat(t.getAttribute("data-mult")), a = parseFloat(area.value) || 0;
+      if (areaVal) areaVal.textContent = a.toLocaleString("en-US");
+      out.textContent = money(a * low * mult) + " – " + money(a * high * mult);
+    }
+    function wire(g) {
+      g.addEventListener("click", function (e) {
+        var b = e.target.closest(".calc__chip"); if (!b) return;
+        g.querySelectorAll(".calc__chip").forEach(function (c) { c.classList.remove("is-active"); c.setAttribute("aria-pressed", "false"); });
+        b.classList.add("is-active"); b.setAttribute("aria-pressed", "true"); update();
+      });
+    }
+    wire(svc); wire(tier);
+    area.addEventListener("input", update);
+    update();
+  }
+
+  /* ---------- Gallery filter ---------- */
+  function initGalleryFilter() {
+    var filter = $("#galleryFilter"), track = $("#galleryTrack"), viewport = $("#galleryViewport"), prog = $("#galleryProgress");
+    if (!filter || !track) return;
+    filter.addEventListener("click", function (e) {
+      var b = e.target.closest(".chip"); if (!b) return;
+      filter.querySelectorAll(".chip").forEach(function (c) { c.classList.remove("is-active"); c.setAttribute("aria-pressed", "false"); });
+      b.classList.add("is-active"); b.setAttribute("aria-pressed", "true");
+      var f = b.getAttribute("data-filter");
+      $$(".gallery__card", track).forEach(function (card) {
+        var tags = (card.getAttribute("data-tags") || "").split(" ");
+        card.classList.toggle("is-hidden", !(f === "all" || tags.indexOf(f) > -1));
+      });
+      if (viewport) viewport.scrollLeft = 0;
+      if (prog) prog.style.width = "0%";
+    });
+  }
+
+  /* ---------- FAQ accordion ---------- */
+  function initFaq() {
+    $$(".faq__item").forEach(function (item) {
+      var btn = item.querySelector(".faq__q"); if (!btn) return;
+      btn.addEventListener("click", function () {
+        var open = item.classList.toggle("is-open");
+        btn.setAttribute("aria-expanded", String(open));
+      });
+    });
+  }
+
+  /* ---------- Sticky mobile action bar ---------- */
+  function initMobileCta() {
+    var bar = $("#mobileCta"); if (!bar) return;
+    var onScroll = function () { bar.classList.toggle("is-visible", window.scrollY > 600); };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
   }
 
   /* ---------- Header sticky ---------- */
@@ -287,12 +367,12 @@
 
   /* ---------- Gallery (data-driven + reel + lightbox) ---------- */
   var galleryData = [
-    { file: "gallery-1.jpg", cap: "Modern porcelain bath", portrait: true },
-    { file: "gallery-2.jpg", cap: "Paver patio & pool deck", portrait: false },
-    { file: "gallery-3.jpg", cap: "Kitchen backsplash", portrait: false },
-    { file: "gallery-4.jpg", cap: "Natural stone entry", portrait: true },
-    { file: "gallery-5.jpg", cap: "Feature accent wall", portrait: false },
-    { file: "gallery-6.jpg", cap: "Driveway pavers", portrait: false }
+    { file: "gallery-1.jpg", cap: "Modern porcelain bath", portrait: true,  tags: "baths tile" },
+    { file: "gallery-2.jpg", cap: "Paver patio & pool deck", portrait: false, tags: "pavers outdoor" },
+    { file: "gallery-3.jpg", cap: "Kitchen backsplash", portrait: false, tags: "baths tile" },
+    { file: "gallery-4.jpg", cap: "Natural stone entry", portrait: true,  tags: "tile" },
+    { file: "gallery-5.jpg", cap: "Feature accent wall", portrait: false, tags: "tile" },
+    { file: "gallery-6.jpg", cap: "Driveway pavers", portrait: false, tags: "pavers outdoor" }
   ];
   var galleryUrls = [];
   function initGallery() {
@@ -305,6 +385,7 @@
       card.className = "gallery__card photo" + (item.portrait ? " gallery__card--portrait" : "");
       card.href = url;
       card.setAttribute("data-index", i);
+      card.setAttribute("data-tags", item.tags || "");
       card.setAttribute("aria-label", "View " + item.cap);
       card.innerHTML =
         '<span class="gallery__plate metal">' + ("0" + (i + 1)) + "</span>" +

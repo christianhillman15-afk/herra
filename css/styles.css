@@ -700,7 +700,98 @@ a.contact__value:hover { color: var(--oxblood); }
 
 /* Print */
 @media print {
-  .topbar, .header, .hero__cue, .to-top, .cta-banner, .nav-toggle, .marquee, .preloader, .cursor, .grain { display: none !important; }
+  .topbar, .header, .hero__cue, .to-top, .cta-banner, .nav-toggle, .marquee, .preloader, .cursor, .grain, .mobile-cta, .scroll-progress { display: none !important; }
   body { color: #000; background: #fff; }
   .act--dark { background: #fff !important; color: #000 !important; }
+}
+
+/* =========================================================
+   ADDED FEATURES
+   ========================================================= */
+
+/* --- Reading progress bar --- */
+.scroll-progress {
+  position: fixed; top: 0; left: 0; height: 3px; width: 100%;
+  transform: scaleX(0); transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--oxblood), var(--champagne-core), var(--champagne-hi));
+  z-index: 1100; pointer-events: none;
+}
+
+/* --- Gallery filter chips (on dark) --- */
+.gallery__filter { display: flex; flex-wrap: wrap; justify-content: center; gap: .55rem; margin-top: 1.5rem; }
+.chip {
+  font-family: var(--font-body); font-weight: 600; font-size: .85rem; color: var(--cream-muted);
+  background: transparent; border: 1px solid var(--hairline-dark); padding: .5rem 1.05rem; border-radius: 999px;
+  transition: color .25s, background .25s, border-color .25s;
+}
+.chip:hover { color: var(--cream); border-color: var(--champagne-core); }
+.chip.is-active { color: var(--void); background: var(--champagne-core); border-color: var(--champagne-core); }
+.gallery__card.is-hidden { display: none; }
+
+/* --- Estimate calculator --- */
+.calc__card {
+  display: grid; grid-template-columns: 1.35fr 1fr; gap: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  overflow: hidden; box-shadow: var(--shadow-card);
+}
+.calc__controls { padding: clamp(1.6rem, 3vw, 2.5rem); display: grid; gap: 1.8rem; align-content: start; }
+.calc__group { display: grid; gap: .85rem; }
+.calc__label { font-size: .92rem; font-weight: 600; color: var(--heading); }
+.calc__label strong { color: var(--oxblood); font-variant-numeric: tabular-nums; }
+.calc__chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+.calc__chip {
+  font-family: var(--font-body); font-weight: 600; font-size: .9rem; color: var(--body);
+  background: var(--bg); border: 1.5px solid var(--border); padding: .6rem 1rem; border-radius: 10px;
+  transition: color .25s var(--ease), background .25s var(--ease), border-color .25s var(--ease), transform .25s var(--ease);
+}
+.calc__chip:hover { border-color: var(--oxblood); transform: translateY(-1px); }
+.calc__chip.is-active { color: #fff; background: var(--oxblood); border-color: var(--oxblood); }
+.calc__range { width: 100%; accent-color: var(--oxblood); cursor: ew-resize; }
+.calc__scale { display: flex; justify-content: space-between; font-size: .74rem; color: var(--muted); }
+.calc__result {
+  padding: clamp(1.8rem, 3vw, 2.5rem); background: linear-gradient(160deg, var(--espresso-800), var(--void));
+  color: var(--cream); display: grid; align-content: center; justify-items: center; gap: .55rem; text-align: center; position: relative; overflow: hidden;
+}
+.calc__result::before { content: ""; position: absolute; inset: 0; background: radial-gradient(70% 60% at 50% 0%, rgba(193,90,46,.22), transparent 60%); pointer-events: none; }
+.calc__result > * { position: relative; z-index: 1; }
+.calc__result-label { font-size: .76rem; text-transform: uppercase; letter-spacing: .16em; color: var(--champagne-core); }
+.calc__result-value { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.7rem, 4vw, 2.5rem); line-height: 1.12; font-variant-numeric: tabular-nums; }
+.calc__result-note { font-size: .8rem; color: var(--cream-muted); margin-bottom: .7rem; max-width: 30ch; }
+
+/* --- FAQ accordion --- */
+.faq__wrap { max-width: 840px; }
+.faq__list { display: grid; gap: .75rem; }
+.faq__item { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; transition: border-color .3s, box-shadow .3s; }
+.faq__item.is-open { border-color: rgba(110,42,37,.4); box-shadow: var(--shadow-card); }
+.faq__q { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1rem; text-align: left; font-family: var(--font-body); font-weight: 600; font-size: 1.05rem; color: var(--heading); padding: 1.15rem 1.4rem; }
+.faq__q:hover { color: var(--oxblood); }
+.faq__chev { width: 20px; height: 20px; fill: none; stroke: var(--oxblood); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .4s var(--ease); flex: none; }
+.faq__item.is-open .faq__chev { transform: rotate(180deg); }
+.faq__a { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s var(--ease); }
+.faq__item.is-open .faq__a { grid-template-rows: 1fr; }
+.faq__a-inner { overflow: hidden; }
+.faq__a-inner p { padding: 0 1.4rem 1.3rem; color: var(--muted); font-size: .98rem; }
+.no-js .faq__a { grid-template-rows: 1fr; }
+
+/* --- Sticky mobile action bar --- */
+.mobile-cta {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 950; display: none; gap: .6rem; padding: .6rem;
+  background: rgba(13,10,6,.92); backdrop-filter: blur(10px); border-top: 1px solid var(--hairline-dark);
+  transform: translateY(110%); transition: transform .4s var(--ease); padding-bottom: max(.6rem, env(safe-area-inset-bottom));
+}
+.mobile-cta.is-visible { transform: none; }
+.mobile-cta__btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; font-weight: 600; font-size: 1rem; padding: .9rem; border-radius: 12px; }
+.mobile-cta__btn svg { width: 20px; height: 20px; fill: currentColor; }
+.mobile-cta__call { background: var(--espresso-700); color: var(--cream); }
+.mobile-cta__quote { background: var(--oxblood); color: #fff; }
+
+@media (max-width: 860px) {
+  .calc__card { grid-template-columns: 1fr; }
+  .mobile-cta { display: flex; }
+  .to-top { display: none; }
+  .footer { padding-bottom: 84px; }
+}
+@media (max-width: 520px) {
+  .calc__chips { gap: .4rem; }
+  .calc__chip { font-size: .84rem; padding: .55rem .8rem; }
 }
